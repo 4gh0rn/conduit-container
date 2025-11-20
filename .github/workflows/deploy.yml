@@ -1,0 +1,101 @@
+name: Deploy Conduit Container
+
+on:
+  push:
+    branches: [main, master, deploy_conduit]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    environment: production
+
+    steps:
+      - name: Prepare project directory
+        run: |
+          PROJECT_DIR="$HOME/conduit-container"
+          if [ ! -d "$PROJECT_DIR" ]; then
+            mkdir -p "$PROJECT_DIR"
+          fi
+          cd "$PROJECT_DIR"
+          if [ ! -d ".git" ]; then
+            git clone https://github.com/${{ github.repository }}.git .
+          else
+            git fetch origin
+            git reset --hard origin/${{ github.ref_name }}
+          fi
+
+      - name: Ensure Docker Compose
+        id: compose
+        run: |
+          set -e
+          if docker compose version >/dev/null 2>&1; then
+            echo "cmd=docker compose" >> "$GITHUB_OUTPUT"
+          elif command -v docker-compose >/dev/null 2>&1; then
+            echo "cmd=docker-compose" >> "$GITHUB_OUTPUT"
+          else
+            sudo curl -L "https://github.com/docker/compose/releases/download/v2.25.0/docker-compose-linux-x86_64" -o /usr/local/bin/docker-compose
+            sudo chmod +x /usr/local/bin/docker-compose
+            echo "cmd=docker-compose" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Render environment file
+        env:
+          BACKEND_PORT: ${{ vars.BACKEND_PORT || '8000' }}
+          BACKEND_DB_PATH: ${{ vars.BACKEND_DB_PATH || '/app/data/conduit.db' }}
+          BACKEND_LOG_LEVEL: ${{ vars.BACKEND_LOG_LEVEL || 'info' }}
+          FRONTEND_PORT: ${{ vars.FRONTEND_PORT || '8282' }}
+          FRONTEND_PORT_INTERNAL: ${{ vars.FRONTEND_PORT_INTERNAL || '4173' }}
+          FRONTEND_API_URL: ${{ vars.FRONTEND_API_URL || 'http://backend:8000/api' }}
+          CORS_ALLOW_ORIGINS: ${{ vars.CORS_ALLOW_ORIGINS || '*' }}
+        run: |
+          set -euo pipefail
+          PROJECT_DIR="$HOME/conduit-container"
+          cd "$PROJECT_DIR"
+          if [ ! -f "docker-compose.yaml" ]; then
+            echo "Error: docker-compose.yaml not found in $PROJECT_DIR"
+            ls -la
+            exit 1
+          fi
+          cat <<EOF > .env
+          # Backend
+          BACKEND_PORT=${BACKEND_PORT}
+          BACKEND_DB_PATH=${BACKEND_DB_PATH}
+          BACKEND_LOG_LEVEL=${BACKEND_LOG_LEVEL}
+
+          # Frontend
+          FRONTEND_PORT=${FRONTEND_PORT}
+          FRONTEND_PORT_INTERNAL=${FRONTEND_PORT_INTERNAL}
+          FRONTEND_API_URL=${FRONTEND_API_URL}
+
+          # Security
+          CORS_ALLOW_ORIGINS=${CORS_ALLOW_ORIGINS}
+          EOF
+
+      - name: Deploy containers
+        run: |
+          set -e
+          PROJECT_DIR="$HOME/conduit-container"
+          cd "$PROJECT_DIR"
+          if [ ! -f "docker-compose.yaml" ]; then
+            echo "Error: docker-compose.yaml not found in $PROJECT_DIR"
+            ls -la
+            exit 1
+          fi
+          COMPOSE_CMD="${{ steps.compose.outputs.cmd }}"
+          $COMPOSE_CMD pull || true
+          $COMPOSE_CMD down
+          $COMPOSE_CMD up -d --build
+          docker image prune -f
+
+      - name: Verify deployment
+        run: |
+          set -e
+          PROJECT_DIR="$HOME/conduit-container"
+          cd "$PROJECT_DIR"
+          COMPOSE_CMD="${{ steps.compose.outputs.cmd }}"
+          sleep 5
+          $COMPOSE_CMD ps
+          echo "Checking backend health..."
+          curl -f http://localhost:${{ vars.BACKEND_PORT || '8000' }}/api/health || exit 1
+          echo "Deployment verified successfully!"

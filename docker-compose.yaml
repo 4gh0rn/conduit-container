@@ -1,0 +1,37 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      args:
+        BACKEND_PORT: ${BACKEND_PORT:-8000}
+    env_file:
+      - .env
+    environment:
+      - DB_PATH=${BACKEND_DB_PATH:-/app/data/conduit.db}
+      - BACKEND_PORT=${BACKEND_PORT:-8000}
+    ports:
+      - "${BACKEND_PORT:-8000}:${BACKEND_PORT:-8000}"
+    volumes:
+      - backend-data:/app/data
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        FRONTEND_PORT: ${FRONTEND_PORT_INTERNAL:-4173}
+    env_file:
+      - .env
+    environment:
+      - PORT=${FRONTEND_PORT_INTERNAL:-4173}
+      - FRONTEND_PORT_INTERNAL=${FRONTEND_PORT_INTERNAL:-4173}
+      - API_TARGET=${FRONTEND_API_URL:-http://backend:8000}
+      - BACKEND_PORT=${BACKEND_PORT:-8000}
+    depends_on:
+      - backend
+    ports:
+      - "${FRONTEND_PORT:-8282}:${FRONTEND_PORT_INTERNAL:-4173}"
+    restart: unless-stopped
+
+volumes:
+  backend-data:

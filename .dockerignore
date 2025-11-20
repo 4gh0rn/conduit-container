@@ -1,0 +1,31 @@
+# macOS
+.DS_Store
+
+# Git
+.git
+.gitignore
+
+# Python build artifacts
+__pycache__/
+*.py[cod]
+*.pyo
+*.whl
+.venv/
+
+# Node build artifacts
+node_modules/
+dist/
+build/
+.npm/
+
+# Logs & envs
+*.log
+.env
+.env.local
+.env.*
+
+# Misc
+coverage/
+*.pdf
+checklist.txt
+
