@@ -1,5 +1,6 @@
 services:
   backend:
+    container_name: conduit-backend
     build:
       context: ./backend
       args:
@@ -16,6 +17,7 @@ services:
     restart: unless-stopped
 
   frontend:
+    container_name: conduit-frontend
     build:
       context: ./frontend
       args:

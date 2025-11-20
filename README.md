@@ -12,11 +12,19 @@
 ## Overview
 This repository packages a minimal Conduit-like stack—Python/Flask backend plus a React/Vite frontend—into production-ready containers. The goal is to rehearse cloud deployment skills: image hardening, service networking, persistence, logging and smoke testing.
 
+### What the Application Does
+The Conduit Container application is a simple article/blog management system that allows users to:
+- **View articles**: Browse a list of articles with titles, descriptions, and content
+- **Create articles**: Add new articles with title, description, body text, and author
+- **Delete articles**: Remove articles from the system
+- **VSCode-like UI**: Experience a modern, editor-style interface with a dark theme, sidebar navigation, and tabbed article view
+
+The application demonstrates a typical microservices architecture with a RESTful API backend (Flask/Gunicorn) and a single-page application frontend (React/Vite), all containerized and orchestrated with Docker Compose.
+
 ## Architecture
 - **Backend (`backend/`)**: Flask API served via Gunicorn (true WSGI) with SQLite persistence under `/app/data`.
 - **Frontend (`frontend/`)**: React SPA built with Vite and served via a production Node.js server with API proxy.
 - **Orchestration**: `docker-compose.yaml` wires the services, sets well-known ports (`8000` API, `8282` UI), and persists the database via the `backend-data` volume.
-- **Configuration**: Environment variables follow `UPPER_CASE_WITH_UNDERSCORE` and live in a local `.env`. Sample values are provided in `env.example`.
 
 ## Quickstart
 1. **Prerequisites**
@@ -56,8 +64,6 @@ docker compose up -d --build
 - **Frontend**: `npm install` inside `frontend/` and run `npm run dev` (served on `5173` by default).
 
 ### Deployment
-
-#### Manual Deployment
 1. Build and tag images:
    ```bash
    docker compose build
@@ -66,33 +72,6 @@ docker compose up -d --build
    ```
 2. Push to the registry of your choice and deploy on your VM.
 3. In production, map the frontend service to port `8282` per checklist requirements.
-
-#### Automated Deployment via GitHub Actions
-The repository includes a GitHub Actions workflow (`.github/workflows/deploy.yml`) for automated deployment to a self-hosted runner.
-
-**Prerequisites:**
-- A self-hosted GitHub Actions runner configured in your repository
-- GitHub repository variables and secrets configured (optional, defaults are used if not set)
-
-**Configuration:**
-Set the following variables in your GitHub repository settings (Settings → Secrets and variables → Actions → Variables):
-- `BACKEND_PORT` (default: `8000`)
-- `BACKEND_DB_PATH` (default: `/app/data/conduit.db`)
-- `FRONTEND_PORT` (default: `8282`)
-- `FRONTEND_PORT_INTERNAL` (default: `4173`)
-- `FRONTEND_API_URL` (default: `http://backend:8000/api`)
-- `CORS_ALLOW_ORIGINS` (default: `*`)
-
-**How it works:**
-1. The workflow triggers on push to `main`/`master` branches or manual dispatch
-2. It clones/updates the repository in `$HOME/conduit-container` on the runner
-3. Ensures Docker Compose is available
-4. Generates `.env` file from GitHub variables
-5. Builds and deploys containers using `docker-compose.yaml`
-6. Verifies deployment by checking backend health endpoint
-
-**Manual trigger:**
-Go to Actions → Deploy Conduit Container → Run workflow
 
 ### Data persistence
 - SQLite lives under the named volume `backend-data`. To back it up:
@@ -113,8 +92,8 @@ Go to Actions → Deploy Conduit Container → Run workflow
   Containers use `restart: unless-stopped`, ensuring automatic recovery.
 - **Logs**
   ```bash
-  docker logs conduit-container-backend-1 > backend.log
-  docker logs conduit-container-frontend-1 > frontend.log
+  docker logs conduit-backend > backend.log
+  docker logs conduit-frontend > frontend.log
   ```
 
 ## Security & Operations
