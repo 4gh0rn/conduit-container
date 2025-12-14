@@ -38,6 +38,8 @@ services:
     build:
       context: ./conduit-frontend
       dockerfile: Dockerfile
+      args:
+        FRONTEND_API_URL: ${FRONTEND_API_URL:-http://localhost:8000/api}
     container_name: conduit-frontend
     restart: unless-stopped
     ports:

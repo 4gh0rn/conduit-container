@@ -13,12 +13,12 @@ RUN npm ci --legacy-peer-deps
 # Copy source code
 COPY . .
 
-# Don't set API URL at build time - will be configured at runtime
-# Just ensure environment.prod.ts exists with a placeholder
-RUN if [ ! -f src/environments/environment.prod.ts ]; then \
-      mkdir -p src/environments && \
-      echo "export const environment = { production: true, apiUrl: 'http://localhost:8000/api' };" > src/environments/environment.prod.ts; \
-    fi
+# Use build-time argument for API URL
+ARG FRONTEND_API_URL=http://localhost:8000/api
+
+# Generate environment.prod.ts with the provided API URL
+RUN mkdir -p src/environments && \
+    echo "export const environment = { production: true, apiUrl: '${FRONTEND_API_URL}' };" > src/environments/environment.prod.ts
 
 # Build the application
 RUN npm run build -- --configuration production
