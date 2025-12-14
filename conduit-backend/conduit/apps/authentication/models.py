@@ -7,6 +7,8 @@ from django.contrib.auth.models import (
     AbstractBaseUser, BaseUserManager, PermissionsMixin
 )
 from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 from conduit.apps.core.models import TimestampedModel
 
@@ -158,3 +160,15 @@ class User(AbstractBaseUser, PermissionsMixin, TimestampedModel):
         if isinstance(token, bytes):
             return token.decode('utf-8')
         return token
+
+
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    """
+    Automatically create a Profile when a User is created.
+    This ensures every user has an associated profile.
+    """
+    if created:
+        # Import here to avoid circular imports
+        from conduit.apps.profiles.models import Profile
+        Profile.objects.create(user=instance)
