@@ -11,6 +11,14 @@ Thumbs.db
 
 # Environment files
 .env
+.env.local
+*.env
+.deploy.env
+
+# Prevent submodules
+conduit-backend/.git
+conduit-frontend/.git
+**/.git
 
 # Dependency directories
 node_modules/
