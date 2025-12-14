@@ -161,7 +161,12 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # CORS configuration from environment
-CORS_ALLOW_ORIGINS_ENV = os.environ.get('CORS_ALLOW_ORIGINS', '*')
+# Handle both empty string (from compose.yml) and '*' as wildcard
+CORS_ALLOW_ORIGINS_ENV = os.environ.get('CORS_ALLOW_ORIGINS', '')
+# Normalize empty string to '*' for easier checking
+if CORS_ALLOW_ORIGINS_ENV == '':
+    CORS_ALLOW_ORIGINS_ENV = '*'
+
 if CORS_ALLOW_ORIGINS_ENV == '*':
     if DEBUG:
         # Only allow all origins in development

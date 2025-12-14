@@ -14,6 +14,7 @@ from .serializers import ArticleSerializer, CommentSerializer, TagSerializer
 class ArticleViewSet(mixins.CreateModelMixin, 
                      mixins.ListModelMixin,
                      mixins.RetrieveModelMixin,
+                     mixins.UpdateModelMixin,
                      viewsets.GenericViewSet):
 
     lookup_field = 'slug'
@@ -104,6 +105,24 @@ class ArticleViewSet(mixins.CreateModelMixin,
         serializer.save()
 
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def destroy(self, request, slug):
+        serializer_context = {'request': request}
+        
+        try:
+            article = self.queryset.get(slug=slug)
+        except Article.DoesNotExist:
+            raise NotFound('An article with this slug does not exist.')
+        
+        # Check if user is the owner of the article
+        if article.author.user != request.user:
+            return Response(
+                {'detail': 'You are not the owner of this article.'}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        article.delete()
+        return Response(None, status=status.HTTP_204_NO_CONTENT)
 
 
 class CommentsListCreateAPIView(generics.ListCreateAPIView):
