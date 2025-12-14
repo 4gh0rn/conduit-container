@@ -12,4 +12,6 @@ def create_related_profile(sender, instance, created, *args, **kwargs):
     # this signal to be run was an update action, we know the user already
     # has a profile.
     if instance and created:
-        instance.profile = Profile.objects.create(user=instance)
+        # Check if profile already exists to avoid duplicate creation
+        if not hasattr(instance, 'profile'):
+            Profile.objects.create(user=instance)
