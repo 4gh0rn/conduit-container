@@ -53,7 +53,7 @@ jobs:
             $COMPOSE_CMD down || true
 
             echo "Building and starting containers..."
-            $COMPOSE_CMD build --pull
+            $COMPOSE_CMD build --pull --no-cache
             $COMPOSE_CMD up -d
 
             echo "Cleaning up old images..."
