@@ -10,9 +10,13 @@ services:
     environment:
       - BACKEND_DB_PATH=${BACKEND_DB_PATH:-/app/data/conduit.db}
       - BACKEND_LOG_LEVEL=${BACKEND_LOG_LEVEL:-info}
-      - CORS_ALLOW_ORIGINS=${CORS_ALLOW_ORIGINS:-*}
-      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-*}
+      # Security: CORS and ALLOWED_HOSTS must be explicitly set in production
+      # For development, defaults are handled in settings.py
+      - CORS_ALLOW_ORIGINS=${CORS_ALLOW_ORIGINS:-}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-}
       - DEBUG=${DEBUG:-False}
+      # SECRET_KEY must be set via environment variable in production
+      - SECRET_KEY=${SECRET_KEY:-}
     volumes:
       - backend-db:/app/data
     networks:

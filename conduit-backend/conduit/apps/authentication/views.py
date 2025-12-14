@@ -2,6 +2,7 @@ from rest_framework import status
 from rest_framework.generics import RetrieveUpdateAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView
 
 from .renderers import UserJSONRenderer
@@ -10,11 +11,17 @@ from .serializers import (
 )
 
 
+class StrictAnonRateThrottle(AnonRateThrottle):
+    """Stricter rate limiting for authentication endpoints."""
+    rate = '5/minute'  # 5 requests per minute for anonymous users
+
+
 class RegistrationAPIView(APIView):
     # Allow any user (authenticated or not) to hit this endpoint.
     permission_classes = (AllowAny,)
     renderer_classes = (UserJSONRenderer,)
     serializer_class = RegistrationSerializer
+    throttle_classes = [StrictAnonRateThrottle]
 
     def post(self, request):
         user = request.data.get('user', {})
@@ -33,6 +40,7 @@ class LoginAPIView(APIView):
     permission_classes = (AllowAny,)
     renderer_classes = (UserJSONRenderer,)
     serializer_class = LoginSerializer
+    throttle_classes = [StrictAnonRateThrottle]  # Prevent brute force attacks
 
     def post(self, request):
         user = request.data.get('user', {})

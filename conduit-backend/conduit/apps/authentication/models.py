@@ -43,14 +43,25 @@ class UserManager(BaseUserManager):
         they want.
         """
         import os
-        print('Reading superuser password from env')
-        SUPER_USER_PASSWORD = os.environ.get(
-            'DJANGO_SUPERUSER_PASSWORD', '')
-        if len(SUPER_USER_PASSWORD) >= 4:
+        SUPER_USER_PASSWORD = os.environ.get('DJANGO_SUPERUSER_PASSWORD', '')
+        if SUPER_USER_PASSWORD and len(SUPER_USER_PASSWORD) >= 8:
             password = SUPER_USER_PASSWORD
         else:
-            print('Setting default password since no superuser password was provided.')
-            password = 'securepass'
+            # Require explicit password in production
+            if os.environ.get('DEBUG', 'False').lower() != 'true':
+                raise ValueError(
+                    "DJANGO_SUPERUSER_PASSWORD environment variable must be set "
+                    "in production with at least 8 characters. "
+                    "No default password is allowed."
+                )
+            # Development fallback - warn but allow
+            import warnings
+            warnings.warn(
+                "Using default superuser password in development. "
+                "Set DJANGO_SUPERUSER_PASSWORD environment variable.",
+                UserWarning
+            )
+            password = password or 'dev-securepass-change-in-production'
 
         user = self.create_user(username, email, password)
         user.is_superuser = True

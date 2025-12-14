@@ -1,10 +1,13 @@
 import jwt
+import logging
 
 from django.conf import settings
 
 from rest_framework import authentication, exceptions
 
 from .models import User
+
+logger = logging.getLogger(__name__)
 
 
 class JWTAuthentication(authentication.BaseAuthentication):
@@ -75,7 +78,20 @@ class JWTAuthentication(authentication.BaseAuthentication):
         """
         try:
             payload = jwt.decode(token, settings.SECRET_KEY, algorithms=['HS256'])
-        except:
+        except jwt.ExpiredSignatureError:
+            msg = 'Authentication token has expired.'
+            raise exceptions.AuthenticationFailed(msg)
+        except jwt.DecodeError:
+            msg = 'Invalid authentication. Could not decode token.'
+            raise exceptions.AuthenticationFailed(msg)
+        except jwt.InvalidTokenError:
+            msg = 'Invalid authentication token.'
+            raise exceptions.AuthenticationFailed(msg)
+        except Exception as e:
+            # Log the actual error for debugging but don't expose it to client
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f'JWT authentication error: {str(e)}', exc_info=True)
             msg = 'Invalid authentication. Could not decode token.'
             raise exceptions.AuthenticationFailed(msg)
 

@@ -20,18 +20,34 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/1.10/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY', '2^f+3@v7$v1f8yt0!s)3-1t$)tlp+xm17=*g))_xoi&&9m#2a&')
+SECRET_KEY = os.environ.get('SECRET_KEY')
+if not SECRET_KEY:
+    # Only allow default in development
+    if os.environ.get('DEBUG', 'False').lower() == 'true':
+        SECRET_KEY = '2^f+3@v7$v1f8yt0!s)3-1t$)tlp+xm17=*g))_xoi&&9m#2a&'
+    else:
+        raise ValueError(
+            "SECRET_KEY environment variable must be set in production. "
+            "Generate a secure key using: python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'"
+        )
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
+DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
 
 # ALLOWED_HOSTS from environment or default
 ALLOWED_HOSTS_ENV = os.environ.get('ALLOWED_HOSTS', '')
 if ALLOWED_HOSTS_ENV:
     ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS_ENV.split(',')]
 else:
-    # Default hosts for container environment
-    ALLOWED_HOSTS = ['backend', 'localhost', '127.0.0.1', '*']
+    if DEBUG:
+        # Default hosts for development/container environment
+        ALLOWED_HOSTS = ['backend', 'localhost', '127.0.0.1']
+    else:
+        # Production: require explicit ALLOWED_HOSTS
+        raise ValueError(
+            "ALLOWED_HOSTS environment variable must be set in production. "
+            "Set it to your domain(s), e.g., 'example.com,www.example.com'"
+        )
 
 
 # Application definition
@@ -147,15 +163,23 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 # CORS configuration from environment
 CORS_ALLOW_ORIGINS_ENV = os.environ.get('CORS_ALLOW_ORIGINS', '*')
 if CORS_ALLOW_ORIGINS_ENV == '*':
-    CORS_ALLOW_ALL_ORIGINS = True
-    CORS_ALLOWED_ORIGINS = []
+    if DEBUG:
+        # Only allow all origins in development
+        CORS_ALLOW_ALL_ORIGINS = True
+        CORS_ALLOWED_ORIGINS = []
+    else:
+        # Production: require explicit CORS origins
+        raise ValueError(
+            "CORS_ALLOW_ORIGINS environment variable must be set in production. "
+            "Wildcard '*' is not allowed. Set it to your frontend domain(s), e.g., 'https://example.com'"
+        )
 else:
     CORS_ALLOW_ALL_ORIGINS = False
     CORS_ALLOWED_ORIGINS = [
         origin.strip() for origin in CORS_ALLOW_ORIGINS_ENV.split(',')
     ]
 
-# Additional CORS settings for development
+# Additional CORS settings
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = [
     'accept',
@@ -184,4 +208,30 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
     'PAGE_SIZE': 20,
+    
+    # Rate limiting to prevent abuse
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle'
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/hour',  # Anonymous users: 100 requests per hour
+        'user': '1000/hour',  # Authenticated users: 1000 requests per hour
+    }
 }
+
+# Security Settings
+if not DEBUG:
+    # HTTPS settings for production
+    SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', 'False').lower() == 'true'
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
+    SECURE_HSTS_SECONDS = 31536000  # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    
+    # Additional security headers
+    SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
