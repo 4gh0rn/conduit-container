@@ -7,6 +7,7 @@ from django.contrib.auth.models import (
     AbstractBaseUser, BaseUserManager, PermissionsMixin
 )
 from django.db import models
+from django.apps import apps
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
@@ -169,6 +170,6 @@ def create_user_profile(sender, instance, created, **kwargs):
     This ensures every user has an associated profile.
     """
     if created:
-        # Import here to avoid circular imports
-        from conduit.apps.profiles.models import Profile
+        # Use apps.get_model to avoid circular imports
+        Profile = apps.get_model('profiles', 'Profile')
         Profile.objects.create(user=instance)
