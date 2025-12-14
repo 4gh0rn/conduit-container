@@ -74,7 +74,7 @@ class ArticleViewSet(mixins.CreateModelMixin,
         serializer_context = {'request': request}
 
         try:
-            serializer_instance = self.queryset.get(slug=slug)
+            serializer_instance = self.get_queryset().get(slug=slug)
         except Article.DoesNotExist:
             raise NotFound('An article with this slug does not exist.')
 
@@ -90,7 +90,7 @@ class ArticleViewSet(mixins.CreateModelMixin,
         serializer_context = {'request': request}
 
         try:
-            serializer_instance = self.queryset.get(slug=slug)
+            serializer_instance = self.get_queryset().get(slug=slug)
         except Article.DoesNotExist:
             raise NotFound('An article with this slug does not exist.')
             
@@ -108,10 +108,9 @@ class ArticleViewSet(mixins.CreateModelMixin,
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def destroy(self, request, slug):
-        serializer_context = {'request': request}
-        
         try:
-            article = self.queryset.get(slug=slug)
+            # Use get_queryset() to ensure proper select_related and filtering
+            article = self.get_queryset().get(slug=slug)
         except Article.DoesNotExist:
             raise NotFound('An article with this slug does not exist.')
         
