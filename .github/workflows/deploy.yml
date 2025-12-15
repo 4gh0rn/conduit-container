@@ -56,19 +56,12 @@ jobs:
             docker builder prune -af || true
             docker system prune -af || true
 
-            echo "Restarting Docker service for clean slate..."
-            sudo systemctl restart docker || true
-            sleep 5
-
             echo "Building and starting containers with fresh environment..."
             $COMPOSE_CMD build --pull --no-cache
             $COMPOSE_CMD up -d
 
             echo "Waiting for services..."
             sleep 10
-
-            echo "Creating missing profiles for existing users..."
-            $COMPOSE_CMD exec -T backend python manage.py create_missing_profiles || true
 
             echo "Container status:"
             $COMPOSE_CMD ps
