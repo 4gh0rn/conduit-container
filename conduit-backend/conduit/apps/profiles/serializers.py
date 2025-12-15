@@ -29,6 +29,9 @@ class ProfileSerializer(serializers.ModelSerializer):
         if not request.user.is_authenticated:
             return False
 
+        if not hasattr(request.user, 'profile'):
+            return False
+
         follower = request.user.profile
         followee = instance
 

@@ -37,6 +37,12 @@ class ProfileFollowAPIView(APIView):
     serializer_class = ProfileSerializer
 
     def delete(self, request, username=None):
+        if not hasattr(self.request.user, 'profile'):
+            return Response(
+                {'detail': 'User profile not found. Please contact administrator.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
         follower = self.request.user.profile
 
         try:
@@ -53,6 +59,12 @@ class ProfileFollowAPIView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request, username=None):
+        if not hasattr(self.request.user, 'profile'):
+            return Response(
+                {'detail': 'User profile not found. Please contact administrator.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
         follower = self.request.user.profile
 
         try:

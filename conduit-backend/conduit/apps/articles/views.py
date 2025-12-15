@@ -43,6 +43,12 @@ class ArticleViewSet(mixins.CreateModelMixin,
         return queryset
 
     def create(self, request):
+        if not hasattr(request.user, 'profile'):
+            return Response(
+                {'detail': 'User profile not found. Please contact administrator.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
         serializer_context = {
             'author': request.user.profile,
             'request': request
@@ -144,6 +150,12 @@ class CommentsListCreateAPIView(generics.ListCreateAPIView):
         return queryset.filter(**filters)
 
     def create(self, request, article_slug=None):
+        if not hasattr(request.user, 'profile'):
+            return Response(
+                {'detail': 'User profile not found. Please contact administrator.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
         data = request.data.get('comment', {})
         context = {'author': request.user.profile}
 
@@ -181,6 +193,12 @@ class ArticlesFavoriteAPIView(APIView):
     serializer_class = ArticleSerializer
 
     def delete(self, request, article_slug=None):
+        if not hasattr(self.request.user, 'profile'):
+            return Response(
+                {'detail': 'User profile not found. Please contact administrator.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
         profile = self.request.user.profile
         serializer_context = {'request': request}
 
@@ -196,6 +214,12 @@ class ArticlesFavoriteAPIView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request, article_slug=None):
+        if not hasattr(self.request.user, 'profile'):
+            return Response(
+                {'detail': 'User profile not found. Please contact administrator.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
         profile = self.request.user.profile
         serializer_context = {'request': request}
 
@@ -233,6 +257,8 @@ class ArticlesFeedAPIView(generics.ListAPIView):
     serializer_class = ArticleSerializer
 
     def get_queryset(self):
+        if not hasattr(self.request.user, 'profile'):
+            return Article.objects.none()
         return Article.objects.filter(
             author__in=self.request.user.profile.follows.all()
         )
