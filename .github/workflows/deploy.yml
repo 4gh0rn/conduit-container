@@ -49,15 +49,20 @@ jobs:
               COMPOSE_CMD="docker-compose"
             fi
 
-            echo "Stopping existing containers..."
-            $COMPOSE_CMD down || true
+            echo "Stopping and removing all containers, networks, and volumes..."
+            $COMPOSE_CMD down --volumes --remove-orphans || true
 
-            echo "Building and starting containers..."
+            echo "Cleaning up Docker system completely..."
+            docker builder prune -af || true
+            docker system prune -af --volumes || true
+
+            echo "Restarting Docker service for clean slate..."
+            sudo systemctl restart docker || true
+            sleep 5
+
+            echo "Building and starting containers with fresh environment..."
             $COMPOSE_CMD build --pull --no-cache
             $COMPOSE_CMD up -d
-
-            echo "Cleaning up old images..."
-            docker image prune -f
 
             echo "Waiting for services..."
             sleep 10
