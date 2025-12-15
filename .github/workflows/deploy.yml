@@ -49,12 +49,12 @@ jobs:
               COMPOSE_CMD="docker-compose"
             fi
 
-            echo "Stopping and removing all containers, networks, and volumes..."
-            $COMPOSE_CMD down --volumes --remove-orphans || true
+            echo "Stopping and removing all containers and networks..."
+            $COMPOSE_CMD down --remove-orphans || true
 
-            echo "Cleaning up Docker system completely..."
+            echo "Cleaning up Docker system (keeping named volumes)..."
             docker builder prune -af || true
-            docker system prune -af --volumes || true
+            docker system prune -af || true
 
             echo "Restarting Docker service for clean slate..."
             sudo systemctl restart docker || true
