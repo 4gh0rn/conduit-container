@@ -37,6 +37,3 @@ __pycache__/
 # Editor folders
 .idea/
 .vscode/
-
-.cursor/
-.claude/
