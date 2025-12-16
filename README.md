@@ -38,6 +38,12 @@ This repository contains a containerized deployment of the **Conduit application
 3. **Build and start**
    ```bash
    make build
+   make up
+   ```
+   
+   Or alternatively:
+   ```bash
+   docker compose build
    docker compose up -d
    ```
 
