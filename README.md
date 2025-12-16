@@ -1,15 +1,5 @@
 # Conduit Container Deployment
 
-## Table of Contents
-
-- [Description](#description)
-- [Quickstart](#quickstart)
-- [Usage](#usage)
-- [Logging and Debugging](#logging-and-debugging)
-- [Security Notes](#security-notes)
-
-## Description
-
 This repository contains a containerized deployment of the **Conduit application** - a social blogging platform. The application consists of a Django REST API backend and an Angular frontend, containerized with Docker Compose.
 
 - **Backend**: Django 3.2.25 LTS with Gunicorn WSGI server
@@ -17,27 +7,45 @@ This repository contains a containerized deployment of the **Conduit application
 - **Database**: SQLite with persistent volumes
 - **Features**: Multi-stage builds, non-root containers, health checks
 
+## Table of Contents
+
+- [Quickstart](#quickstart)
+- [Usage](#usage)
+- [Logging and Debugging](#logging-and-debugging)
+- [Security Notes](#security-notes)
+
 ## Quickstart
 
-1. **Clone and build**
+**Prerequisites:**
+- Docker (version 20.10 or higher)
+- Docker Compose (version 2.0 or higher)
+- Make (optional, for `make build` command)
+
+1. **Clone the repository**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/4gh0rn/conduit-container
    cd conduit-container
+   ```
+
+2. **Set up environment**
+   ```bash
+   cp .env.example .env
+   ```
+
+   > [!NOTE]
+   > You must update your `.env` file with secure values before deploying to production.
+
+3. **Build and start**
+   ```bash
    make build
    docker compose up -d
    ```
 
-2. **Access the application**
+4. **Access the application**
    - Frontend: http://localhost:8282
    - Backend API: http://localhost:8000/api
 
 ## Usage
-
-**Environment Configuration:**
-```bash
-cp .env.example .env
-# Edit .env for your configuration
-```
 
 **Basic Commands:**
 ```bash

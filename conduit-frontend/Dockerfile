@@ -23,38 +23,21 @@ RUN mkdir -p src/environments && \
 # Build the application
 RUN npm run build -- --configuration production
 
-# Stage 2: Production with simple HTTP server
-FROM node:20-alpine
+# Stage 2: Production with nginx
+FROM nginx:alpine
 
-# Create non-root user
-RUN addgroup -g 1001 -S conduit && \
-    adduser -S conduit -u 1001 -G conduit
+# Copy nginx configuration
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Install http-server and wget for healthcheck
-RUN npm install -g http-server && \
-    apk add --no-cache wget
+# Copy built application from builder stage to nginx html directory
+COPY --from=builder /app/dist/angular-conduit /usr/share/nginx/html
 
-# Copy built application from builder stage
-COPY --from=builder --chown=conduit:conduit /app/dist/angular-conduit /app/dist
-
-# Copy entrypoint script
-COPY --chown=conduit:conduit entrypoint.sh /app/entrypoint.sh
-RUN chmod +x /app/entrypoint.sh
-
-# Create directory for static files
-RUN mkdir -p /app/dist && \
-    chown -R conduit:conduit /app/dist
-
-# Switch to non-root user
-USER conduit
-
-# Expose port (Angular preview server uses 4173)
-EXPOSE 4173
+# Expose port 80 (nginx default)
+EXPOSE 80
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:4173/ || exit 1
+    CMD wget --no-verbose --tries=1 --spider http://localhost:80/ || exit 1
 
-# Use entrypoint script for runtime configuration
-WORKDIR /app
-ENTRYPOINT ["/app/entrypoint.sh"]
+# Start nginx
+CMD ["nginx", "-g", "daemon off;"]
