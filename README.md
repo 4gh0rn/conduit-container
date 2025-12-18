@@ -144,8 +144,8 @@ Add the following under **Settings → Variables → Actions**:
 Useful commands on the VM:
 ```bash
 cd "${DEPLOY_PATH}"
-docker compose -f compose.prod.yml ps
-docker compose -f compose.prod.yml logs -f
+docker-compose -f compose.prod.yml ps
+docker-compose -f compose.prod.yml logs -f
 ```
 
 
