@@ -12,6 +12,7 @@ This repository contains a containerized deployment of the **Conduit application
 - [Quickstart](#quickstart)
 - [Usage](#usage)
 - [Logging and Debugging](#logging-and-debugging)
+- [Deployment](#deployment)
 - [Security Notes](#security-notes)
 
 ## Quickstart
@@ -43,8 +44,8 @@ This repository contains a containerized deployment of the **Conduit application
    
    Or alternatively:
    ```bash
-   docker compose build
-   docker compose up -d
+   docker compose -f compose.dev.yml build
+   docker compose -f compose.dev.yml up -d
    ```
 
 4. **Access the application**
@@ -103,19 +104,49 @@ docker compose exec backend /bin/bash
 
 ### SSH Deployment via GitHub Actions
 
-1. **Add GitHub Secrets** (Settings → Secrets → Actions):
-   - `SSH_PRIVATE_KEY`: Your SSH private key
-   - `REMOTE_HOST`: Server IP or domain
-   - `REMOTE_USER`: SSH username
-   - `REMOTE_PORT`: SSH port (optional, default 22)
+This repository contains a deployment workflow at `.github/workflows/deployment.yaml` that:
+- builds container images in GitHub Actions (not on the VM)
+- pushes them to GHCR
+- deploys to your VM via SSH
+- starts the stack in detached mode using `docker compose`
 
-2. **Add GitHub Variables** (Settings → Variables → Actions):
-   - `DEPLOY_PATH`: Server path (default: `~/conduit-container`)
-   - `BACKEND_PORT`: Backend port (default: 8000)
-   - `FRONTEND_PORT`: Frontend port (default: 8282)
-   - `FRONTEND_API_URL`: API URL (default: `http://localhost:8000/api`)
+ The deployment uses `compose.prod.yml` on the VM (image-based, no `build:`).
 
-3. **Deploy**: Push to `main` or `master` branch, or trigger manually from Actions tab
+#### 1) GitHub Secrets
+Add the following under **Settings → Secrets → Actions**:
+- `SSH_PRIVATE_KEY`: SSH private key for the VM user
+- `REMOTE_HOST`: VM IP or domain
+- `REMOTE_USER`: SSH username
+- `REMOTE_PORT`: optional (default: 22)
+- `DJANGO_SECRET_KEY`: Django `SECRET_KEY` for production
+- `GHCR_PAT`: optional, only needed if your GHCR images are private (PAT with `read:packages`)
+
+#### 2) GitHub Variables
+Add the following under **Settings → Variables → Actions**:
+- `DEPLOY_PATH`: server path (default in workflow: `~/conduit-container`)
+- `BACKEND_PORT`: default `8000`
+- `FRONTEND_PORT`: default `8282`
+- `BACKEND_DB_PATH`: default `/app/data/conduit.db`
+- `BACKEND_LOG_LEVEL`: default `info`
+- `FRONTEND_API_URL`: production API URL used at frontend build time (e.g. `http://<VM-IP>:8000/api`)
+- `DEBUG`: `False` in production
+- `ALLOWED_HOSTS`: required in production (comma-separated, e.g. `<VM-IP>,example.com`)
+- `CORS_ALLOW_ORIGINS`: required in production (comma-separated origins, e.g. `http://<VM-IP>:8282`)
+
+#### 3) Trigger a deployment
+- Push to branch `gitlab_ci_deployment`, or run the workflow manually via the Actions tab.
+
+#### 4) Verify on the VM
+- Frontend: `http://<VM-IP>:8282`
+- Backend API: `http://<VM-IP>:8000/api`
+- Health endpoint (VM-local): `curl -f http://localhost:8000/api/health`
+
+Useful commands on the VM:
+```bash
+cd "${DEPLOY_PATH}"
+docker compose -f compose.prod.yml ps
+docker compose -f compose.prod.yml logs -f
+```
 
 
 ## Security Notes

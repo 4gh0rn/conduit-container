@@ -1,0 +1,68 @@
+services:
+  backend:
+    image: ghcr.io/4gh0rn/conduit-backend:${IMAGE_TAG:-latest}
+    container_name: conduit-backend
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    environment:
+      - BACKEND_DB_PATH=${BACKEND_DB_PATH:-/app/data/conduit.db}
+      - BACKEND_LOG_LEVEL=${BACKEND_LOG_LEVEL:-info}
+      # Security: CORS and ALLOWED_HOSTS must be explicitly set in production
+      # For development, defaults are handled in settings.py
+      - CORS_ALLOW_ORIGINS=${CORS_ALLOW_ORIGINS:-}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-}
+      - DEBUG=${DEBUG:-False}
+      # SECRET_KEY must be set via environment variable in production
+      - SECRET_KEY=${SECRET_KEY:-}
+    volumes:
+      - backend-db:/app/data
+    networks:
+      - conduit-network
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  frontend:
+    image: ghcr.io/4gh0rn/conduit-frontend:${IMAGE_TAG:-latest}
+    container_name: conduit-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-8282}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - conduit-network
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:80/",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  conduit-network:
+    driver: bridge
+    name: conduit-network
+
+volumes:
+  backend-db:
+    name: conduit-backend-db
