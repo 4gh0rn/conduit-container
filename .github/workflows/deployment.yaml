@@ -108,16 +108,16 @@ jobs:
             } > .env
 
             echo "Pulling images (no build on VM)..."
-            docker-compose -f compose.prod.yml pull
+            docker compose -f compose.prod.yml pull
 
             echo "Starting containers (detached)..."
-            docker-compose -f compose.prod.yml up -d --remove-orphans
+            docker compose -f compose.prod.yml up -d --remove-orphans
 
             echo "Waiting briefly for health..."
             sleep 10
 
             echo "Container status:"
-            docker-compose -f compose.prod.yml ps
+            docker compose -f compose.prod.yml ps
 
             echo "Health check:"
             curl -f "http://localhost:${BACKEND_PORT:-8000}/api/health"
