@@ -2,7 +2,7 @@ name: Conduit Deployment
 
 on:
   push:
-    branches: [main, gitlab_ci_deployment]
+    branches: [main, github_ci_deployment]
   workflow_dispatch:
 
 permissions:
