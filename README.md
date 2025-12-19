@@ -134,7 +134,7 @@ Add the following under **Settings → Variables → Actions**:
 - `CORS_ALLOW_ORIGINS`: required in production (comma-separated origins, e.g. `http://<VM-IP>:8282`)
 
 #### 3) Trigger a deployment
-- Push to branch `gitlab_ci_deployment`, or run the workflow manually via the Actions tab.
+- Push to branch `main`, or run the workflow manually via the Actions tab.
 
 #### 4) Verify on the VM
 - Frontend: `http://<VM-IP>:8282`
