@@ -30,6 +30,9 @@ export SECRET_KEY
 
 COMPOSE="docker compose -f ${COMPOSE_FILE}"
 
+echo "Stopping existing containers..."
+$COMPOSE down || true
+
 echo "Pulling images (no build on VM)..."
 $COMPOSE pull
 
